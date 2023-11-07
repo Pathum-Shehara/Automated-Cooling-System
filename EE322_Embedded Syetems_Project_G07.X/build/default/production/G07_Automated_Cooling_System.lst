@@ -1,0 +1,907 @@
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  1
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+                      00001 ;----------------------EE322 EMBEDDED SYSTEMS DESIGN----------------------------
+                      00002 ;PROJECT NAME: AUTOMATED COOLING SYSTEM
+                      00003 ;GROUP: 07
+                      00004 ;HARSHANA L.R.      E/17/107
+                      00005 ;HERATH H.M.K.L.    E/17/114
+                      00006 ;MADUSHAN H.M.P.S   E/17/199
+                      00007 ;-------------------------------------------------------------------------------
+Warning[205]: Found directive in column 1. (list)
+                      00008 list p=16F877A
+                      00009 #include "p16f877a.inc"
+                      00001         LIST
+                      00002 
+                      00003 ;==========================================================================
+                      00004 ; Build date : Sep 19 2018
+                      00005 ;  MPASM PIC16F877A processor include
+                      00006 ; 
+                      00007 ;  (c) Copyright 1999-2018 Microchip Technology, All rights reserved
+                      00008 ;==========================================================================
+                      00009 
+                      00567         LIST
+                      00010 
+Warning[205]: Found directive in column 1. (org)
+                      00011 org 0x00                ;reset vector
+                      00012 ;define variables
+  00000020            00013 count1 equ 20h
+  00000021            00014 count2 equ 21h
+  00000023            00015 digit1 equ 23h
+  00000024            00016 digit2 equ 24h
+  00000025            00017 temp equ 25h
+  00000026            00018 const1 equ 26h
+  00000027            00019 const2 equ 27h
+  00000028            00020 ref1 equ 28h
+  00000029            00021 ref2 equ 29h
+  00000030            00022 ref3 equ 30h
+  00000031            00023 ref4 equ 31h 
+                      00024 
+                      00025 ;define lcd pins
+                      00026 #define lcdData PORTB
+                      00027 #define lcdRs PORTD,0
+                      00028 #define lcdRw PORTD,2 
+                      00029 #define lcdE PORTD,1
+                      00030 
+                      00031 ;lcd port initialization
+Warning[203]: Found opcode in column 1. (bcf)
+0000   1303           00032 bcf STATUS,6            ;switch to bank2
+Warning[203]: Found opcode in column 1. (bsf)
+0001   1683           00033 bsf STATUS,5            ;switch to bank1
+Warning[203]: Found opcode in column 1. (clrf)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0002   0186           00034 clrf TRISB              ;configure PORTB as output
+Warning[203]: Found opcode in column 1. (clrf)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0003   0188           00035 clrf TRISD              ;configure PORTD as output
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  2
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Warning[203]: Found opcode in column 1. (bcf)
+0004   1283           00036 bcf STATUS,5            ;switch to bank0
+Warning[203]: Found opcode in column 1. (clrf)
+0005   0186           00037 clrf PORTB              ;lcdData = '0000 0000' 
+Warning[203]: Found opcode in column 1. (clrf)
+0006   0188           00038 clrf PORTD              ;lcdRs=0, lcdRw=0, lcdE=0
+                      00039  
+                      00040 ;adc port initialization
+Warning[203]: Found opcode in column 1. (bsf)
+0007   1683           00041 bsf STATUS,5            ;switch to bank1
+Warning[203]: Found opcode in column 1. (movlw)
+0008   3001           00042 movlw 0x01              
+Warning[203]: Found opcode in column 1. (movwf)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0009   0085           00043 movwf TRISA             ;AN0 set as analog input
+Warning[203]: Found opcode in column 1. (movlw)
+000A   308E           00044 movlw 0x8E
+Warning[203]: Found opcode in column 1. (movwf)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+000B   009F           00045 movwf ADCON1            ;bit7=1, right justify the ADC result
+                      00046                         ;bit3->0=1110, ADC port configuration
+Warning[203]: Found opcode in column 1. (bcf)
+000C   1283           00047 bcf STATUS,5            ;switch to bank0
+Warning[203]: Found opcode in column 1. (movlw)
+000D   30C1           00048 movlw 0xC1              
+Warning[203]: Found opcode in column 1. (movwf)
+000E   009F           00049 movwf ADCON0            ;bit7,6=11, ADC clock select
+                      00050                         ;bit0=1, ADON-ADC is operating
+                      00051 
+                      00052 ;pwm port initialization
+Warning[203]: Found opcode in column 1. (bsf)
+000F   1683           00053 bsf STATUS,5            ;switch to bank1
+Warning[203]: Found opcode in column 1. (movlw)
+0010   3002           00054 movlw 0x02              
+Warning[203]: Found opcode in column 1. (movwf)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0011   0085           00055 movwf TRISA             ;portA pin2 for sensA
+Warning[203]: Found opcode in column 1. (clrf)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+0012   0187           00056 clrf TRISC              ;configure PORTC as output
+Warning[203]: Found opcode in column 1. (bcf)
+0013   1283           00057 bcf STATUS,5            ;switch to bank0
+Warning[203]: Found opcode in column 1. (clrf)
+0014   0187           00058 clrf PORTC              
+Warning[203]: Found opcode in column 1. (bcf)
+0015   1087           00059 bcf PORTC,1             ;in2=0  
+Warning[203]: Found opcode in column 1. (bsf)
+0016   1407           00060 bsf PORTC,0             ;in1=1
+Warning[203]: Found opcode in column 1. (clrf)
+0017   0197           00061 clrf CCP1CON            ;CCP module is off
+Warning[203]: Found opcode in column 1. (clrf)
+0018   0191           00062 clrf TMR2               ;clear TMR2
+Warning[203]: Found opcode in column 1. (movlw)
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  3
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0019   30F9           00063 movlw b'11111001'       ;move 249 to Wreg
+Warning[203]: Found opcode in column 1. (bsf)
+001A   1683           00064 bsf STATUS,5            ;switch to bank1 
+Warning[203]: Found opcode in column 1. (movwf)
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+001B   0092           00065 movwf PR2               ;pwm period=249x4
+Warning[203]: Found opcode in column 1. (bcf)
+001C   1283           00066 bcf STATUS,5            ;switch to bank0
+Warning[203]: Found opcode in column 1. (bsf)
+001D   1412           00067 bsf T2CON,0             ;timer2 prescalor=4
+                      00068  
+Warning[203]: Found opcode in column 1. (call)
+001E   2???           00069 call init               ;initialize the lcd
+Warning[203]: Found opcode in column 1. (call)
+001F   2???           00070 call line1              ;set cursor to DDRAM address 0x80
+                      00071 ;display "TEMPERATURE:"                 
+Warning[203]: Found opcode in column 1. (movlw)
+0020   3054           00072 movlw 0x54
+Warning[203]: Found opcode in column 1. (call)
+0021   2???           00073 call print
+Warning[203]: Found opcode in column 1. (movlw)
+0022   3045           00074 movlw 0x45
+Warning[203]: Found opcode in column 1. (call)
+0023   2???           00075 call print
+Warning[203]: Found opcode in column 1. (movlw)
+0024   304D           00076 movlw 0x4D
+Warning[203]: Found opcode in column 1. (call)
+0025   2???           00077 call print
+Warning[203]: Found opcode in column 1. (movlw)
+0026   3050           00078 movlw 0x50
+Warning[203]: Found opcode in column 1. (call)
+0027   2???           00079 call print
+Warning[203]: Found opcode in column 1. (movlw)
+0028   3045           00080 movlw 0x45
+Warning[203]: Found opcode in column 1. (call)
+0029   2???           00081 call print
+Warning[203]: Found opcode in column 1. (movlw)
+002A   3052           00082 movlw 0x52
+Warning[203]: Found opcode in column 1. (call)
+002B   2???           00083 call print
+Warning[203]: Found opcode in column 1. (movlw)
+002C   3041           00084 movlw 0x41
+Warning[203]: Found opcode in column 1. (call)
+002D   2???           00085 call print
+Warning[203]: Found opcode in column 1. (movlw)
+002E   3054           00086 movlw 0x54
+Warning[203]: Found opcode in column 1. (call)
+002F   2???           00087 call print
+Warning[203]: Found opcode in column 1. (movlw)
+0030   3055           00088 movlw 0x55
+Warning[203]: Found opcode in column 1. (call)
+0031   2???           00089 call print
+Warning[203]: Found opcode in column 1. (movlw)
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  4
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0032   3052           00090 movlw 0x52
+Warning[203]: Found opcode in column 1. (call)
+0033   2???           00091 call print
+Warning[203]: Found opcode in column 1. (movlw)
+0034   3045           00092 movlw 0x45
+Warning[203]: Found opcode in column 1. (call)
+0035   2???           00093 call print
+Warning[203]: Found opcode in column 1. (movlw)
+0036   303A           00094 movlw 0x3A
+Warning[203]: Found opcode in column 1. (call)
+0037   2???           00095 call print
+                      00096  
+0038                  00097 main
+0038   2???           00098     call line1pt1           ;set cursor to DDRAM address 0x8C
+0039   151F           00099     bsf ADCON0,2            ;start ADC
+Warning[207]: Found label after column 1. (adcloop)
+003A                  00100     adcloop 
+003A   191F           00101         btfsc ADCON0,2      ;bit2 gets cleared when ADC is not in progress
+003B   2???           00102         goto adcloop        ;skip if ADCON0,2=0
+003C   1683           00103     bsf STATUS,5            ;switch to bank1
+Message[302]: Register in operand not in bank 0.  Ensure that bank bits are correct.
+003D   081E           00104     movf ADRESL,0           ;lower 8 bits of the ADC result moved to Wreg
+003E   1283           00105     bcf STATUS,5            ;switch to bank0
+003F   1003           00106     bcf STATUS,0            ;carry out bit is cleared
+0040   00A5           00107     movwf temp              ;move ADRESL value to temp
+0041   0CA5           00108     rrf temp,1              ;rotate right temp through carry      
+0042   0825           00109     movf temp,0             ;move temp value to Wreg
+0043   00A7           00110     movwf const2            ;move Wreg value to const2
+0044   01A6           00111     clrf const1             ;clear const1
+                      00112     ;get tens from the 8bit value
+Warning[207]: Found label after column 1. (gettens)
+0045                  00113     gettens
+0045   300A           00114         movlw 0x0A
+0046   0AA6           00115         incf const1,1       ;const1=cons1+1
+0047   02A7           00116         subwf const2,1      ;const2=const2-Wreg
+0048   1803           00117         btfsc STATUS,0
+0049   2???           00118         goto gettens
+004A   0326           00119     decf const1,0           ;Wreg=const1-1
+004B   00A4           00120     movwf digit2            ;move Wreg value to digit2
+004C   0825           00121     movf temp,0             ;move temp value to Wreg
+004D   00A6           00122     movwf const1            ;move Wreg value to const1
+004E   300A           00123     movlw 0x0A
+                      00124     ;get ones from the 8bit value
+Warning[207]: Found label after column 1. (getones)
+004F                  00125     getones
+004F   02A6           00126         subwf const1,1      ;const1=const1-Wreg
+0050   1803           00127         btfsc STATUS,0
+0051   2???           00128         goto getones
+0052   0726           00129     addwf const1,0          ;Wreg=const+Wreg
+0053   00A3           00130     movwf digit1            ;move Wreg value to digit1
+0054   3030           00131     movlw b'00110000'       
+0055   0724           00132     addwf digit2,0          ;take the equivalent CGRAM value for digit2
+0056   2???           00133     call print              ;print digit2
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  5
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+0057   3030           00134     movlw b'00110000'
+0058   0723           00135     addwf digit1,0          ;take the equivalent CGRAM value for digit1
+0059   2???           00136     call print              ;print digit1
+005A   2???           00137     call units              ;print "'C"
+005B   2???           00138     call comparison         ;goto comparison subroutine
+005C   2???           00139     goto main
+                      00140 
+                      00141 ;initialize the lcd    
+005D                  00142 init 
+                      00143     ;clear display
+005D   3001           00144     movlw 0x01
+005E   0086           00145     movwf lcdData
+005F   2???           00146     call enable             ;enable the command
+0060   2???           00147     call delayms 
+                      00148  
+                      00149     ;function set
+0061   0188           00150     clrf PORTD
+0062   3038           00151     movlw 0x38              ;8 bit, 2 line, 5x7 dot
+0063   0086           00152     movwf lcdData
+0064   2???           00153     call enable
+                      00154 
+                      00155     ;display on/off control
+0065   300C           00156     movlw 0x0C 
+0066   0086           00157     movwf lcdData
+0067   2???           00158     call enable
+                      00159  
+                      00160     ;entry mode set
+0068   3006           00161     movlw 0x06
+0069   0086           00162     movwf lcdData
+006A   2???           00163     call enable
+006B   0008           00164     return
+                      00165 
+006C                  00166 units
+006C   30DF           00167     movlw 0xDF
+006D   2???           00168     call print
+006E   3043           00169     movlw 0x43
+006F   2???           00170     call print
+0070   0008           00171     return
+                      00172 
+                      00173 ;print subroutine
+0071                  00174 print
+0071   0086           00175     movwf lcdData               ;move Wreg values to PORTB
+0072   2???           00176     call enable                 
+0073   0008           00177     return
+                      00178 
+                      00179 ;cursor set at DDRAM address 0x80   
+0074                  00180 line1
+0074   1008           00181     bcf lcdRs
+0075   3080           00182     movlw 0x80
+0076   0086           00183     movwf lcdData
+0077   2???           00184     call enable
+0078   2???           00185     call delayms
+0079   1408           00186     bsf lcdRs
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  6
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+007A   0008           00187     return
+                      00188 
+                      00189 ;cursor set at DDRAM address 0x8C    
+007B                  00190 line1pt1
+007B   1008           00191     bcf lcdRs
+007C   308C           00192     movlw 0x8C
+007D   0086           00193     movwf lcdData
+007E   2???           00194     call enable
+007F   2???           00195     call delayms
+0080   1408           00196     bsf lcdRs
+0081   0008           00197     return    
+                      00198 
+                      00199 ;cursor set at DDRAM address 0xC0
+                      00200 ;enables the access to second row
+0082                  00201 line2
+0082   1008           00202     bcf lcdRs
+0083   30C0           00203     movlw 0xc0
+0084   0086           00204     movwf lcdData
+0085   2???           00205     call enable
+0086   2???           00206     call delayms
+0087   1408           00207     bsf lcdRs
+0088   0008           00208     return
+                      00209 
+                      00210 ;compare the temp value with reference
+0089                  00211 comparison
+0089   3019           00212     movlw d'25'
+008A   00A8           00213     movwf ref1
+008B   301E           00214     movlw d'30'
+008C   00A9           00215     movwf ref2
+008D   3023           00216     movlw d'35'
+008E   00B0           00217     movwf ref3
+008F   3028           00218     movlw d'40'
+0090   00B1           00219     movwf ref4
+Warning[207]: Found label after column 1. (comparison1)
+0091                  00220     comparison1                 ;for temp<=25'C
+0091   0828           00221         movf ref1,0
+0092   0225           00222         subwf temp,0
+0093   1C03           00223         btfss STATUS,0          ;if temp<25'C call dutycycle0
+0094   2???           00224         call dutycycle0
+0095   1903           00225         btfsc STATUS,2          ;if temp=25'C call dutycycle25
+0096   2???           00226         call dutycycle25
+0097   1C03           00227         btfss STATUS,0          
+0098   0008           00228         return
+Warning[207]: Found label after column 1. (comparison2)
+0099                  00229     comparison2                 ;for 25'C<temp<=30'C
+0099   0829           00230         movf ref2,0
+009A   0225           00231         subwf temp,0
+009B   1C03           00232         btfss STATUS,0          ;if 25'C<temp<30'C call dutycycle25
+009C   2???           00233         call dutycycle25
+009D   1903           00234         btfsc STATUS,2          ;if temp=30'C call dutycycle50
+009E   2???           00235         call dutycycle50
+009F   1C03           00236         btfss STATUS,0
+00A0   0008           00237         return
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  7
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+Warning[207]: Found label after column 1. (comparison3)
+00A1                  00238     comparison3                 ;for 30'C<temp<=35'C
+00A1   0830           00239         movf ref3,0
+00A2   0225           00240         subwf temp,0
+00A3   1C03           00241         btfss STATUS,0          ;if 30'C<temp<35'C call dutycycle50
+00A4   2???           00242         call dutycycle50        
+00A5   1903           00243         btfsc STATUS,2          ;if temp=35'C call dutycycle75
+00A6   2???           00244         call dutycycle75        
+00A7   1C03           00245         btfss STATUS,0
+00A8   0008           00246         return
+Warning[207]: Found label after column 1. (comparison4)
+00A9                  00247     comparison4                 ;for temp>35'C
+00A9   0831           00248         movf ref4,0
+00AA   0225           00249         subwf temp,0
+00AB   1C03           00250         btfss STATUS,0          ;if 35<temp<=40'C call dutycycle75
+00AC   2???           00251         call dutycycle75
+00AD   1903           00252         btfsc STATUS,2
+00AE   2???           00253         call dutycycle100       ;else call dutycycle100
+00AF   1C03           00254         btfss STATUS,0
+00B0   0008           00255         return
+Warning[207]: Found label after column 1. (comparison5)
+00B1                  00256     comparison5                 
+00B1   0831           00257         movf ref4,0
+00B2   0225           00258         subwf temp,0
+00B3   1803           00259         btfsc STATUS,0          
+00B4   2???           00260         call dutycycle100       
+00B5   0008           00261         return
+                      00262 
+                      00263 ;1us delay      
+00B6                  00264 delayus
+00B6   0BA0           00265     decfsz count1,1
+00B7   2???           00266     goto delayus
+00B8   0008           00267     return
+                      00268 
+                      00269 ;1ms delay    
+00B9                  00270 delayms
+00B9   0BA0           00271     decfsz count1,1
+00BA   2???           00272     goto delayms
+00BB   0BA1           00273     decfsz count2,1
+00BC   2???           00274     goto delayms
+00BD   0008           00275     return
+                      00276 
+                      00277 ;lcd enable command    
+00BE                  00278 enable
+00BE   1488           00279     bsf lcdE
+00BF   2???           00280     call delayus
+00C0   1088           00281     bcf lcdE
+00C1   2???           00282     call delayus
+00C2   0008           00283     return
+                      00284 
+                      00285 ;pwm at 25% duty cycle
+                      00286 ;560 rpm
+00C3                  00287 dutycycle25
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  8
+
+
+LOC  OBJECT CODE     LINE SOURCE TEXT
+  VALUE
+
+00C3   303E           00288     movlw b'00111110'
+00C4   0095           00289     movwf CCPR1L                ;duty cycle=0011 1110 01            
+00C5   301C           00290     movlw b'00011100'
+00C6   0097           00291     movwf CCP1CON               ;pwm enabled
+00C7   1512           00292     bsf T2CON,2                 ;TMR2 starts to increase
+00C8   0008           00293     return
+                      00294 
+                      00295 ;pwm at 50% duty cycle
+                      00296 ;1080 rpm
+00C9                  00297 dutycycle50
+00C9   307C           00298     movlw b'01111100'
+00CA   0095           00299     movwf CCPR1L                ;duty cycle=0111 1100 10 
+00CB   302C           00300     movlw b'00101100'
+00CC   0097           00301     movwf CCP1CON               ;pwm enabled
+00CD   1512           00302     bsf T2CON,2                 ;TMR2 starts to increase
+00CE   0008           00303     return
+                      00304 
+                      00305 ;pwm at 75% duty cycle  
+                      00306 ;1520 rpm
+00CF                  00307 dutycycle75
+00CF   30BA           00308     movlw b'10111010'
+00D0   0095           00309     movwf CCPR1L                ;duty cycle=1011 1010 11
+00D1   303C           00310     movlw b'00111100'
+00D2   0097           00311     movwf CCP1CON               ;pwm enabled
+00D3   1512           00312     bsf T2CON,2                 ;TMR2 starts to increase
+00D4   0008           00313     return
+                      00314 
+                      00315 ;pwm at 100% duty cycle
+                      00316 ;1940 rpm
+00D5                  00317 dutycycle100
+00D5   30F9           00318     movlw b'11111001'           
+00D6   0095           00319     movwf CCPR1L                ;duty cycle=1111 1001 00
+00D7   300C           00320     movlw b'00001100'
+00D8   0097           00321     movwf CCP1CON               ;pwm enabled
+00D9   1512           00322     bsf T2CON,2                 ;TMR2 starts to increase
+00DA   0008           00323     return
+                      00324 
+                      00325 ;pwm at 0% duty cycle 
+                      00326 ;0 rpm
+00DB                  00327 dutycycle0
+00DB   3000           00328     movlw b'00000000'
+00DC   0095           00329     movwf CCPR1L                ;duty cycle=0000 0000 00
+00DD   300C           00330     movlw b'00001100'
+00DE   0097           00331     movwf CCP1CON               ;pwm enabled
+00DF   1512           00332     bsf T2CON,2                 ;TMR2 starts to increase
+00E0   0008           00333     return
+                      00334     
+Warning[205]: Found directive in column 1. (end)
+                      00335 end
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE  9
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+ACKDT                             00000005
+ACKEN                             00000004
+ACKSTAT                           00000006
+ADCON0                            0000001F
+ADCON1                            0000009F
+ADCS0                             00000006
+ADCS1                             00000007
+ADCS2                             00000006
+ADDEN                             00000003
+ADFM                              00000007
+ADIE                              00000006
+ADIF                              00000006
+ADON                              00000000
+ADRESH                            0000001E
+ADRESL                            0000009E
+BCLIE                             00000003
+BCLIF                             00000003
+BF                                00000000
+BRGH                              00000002
+C                                 00000000
+C1INV                             00000004
+C1OUT                             00000006
+C2INV                             00000005
+C2OUT                             00000007
+CCP1CON                           00000017
+CCP1IE                            00000002
+CCP1IF                            00000002
+CCP1M0                            00000000
+CCP1M1                            00000001
+CCP1M2                            00000002
+CCP1M3                            00000003
+CCP1X                             00000005
+CCP1Y                             00000004
+CCP2CON                           0000001D
+CCP2IE                            00000000
+CCP2IF                            00000000
+CCP2M0                            00000000
+CCP2M1                            00000001
+CCP2M2                            00000002
+CCP2M3                            00000003
+CCP2X                             00000005
+CCP2Y                             00000004
+CCPR1                             00000015
+CCPR1H                            00000016
+CCPR1L                            00000015
+CCPR2                             0000001B
+CCPR2H                            0000001C
+CCPR2L                            0000001B
+CHS0                              00000003
+CHS1                              00000004
+CHS2                              00000005
+CIS                               00000003
+CKE                               00000006
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE 10
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+CKP                               00000004
+CM0                               00000000
+CM1                               00000001
+CM2                               00000002
+CMCON                             0000009C
+CMIE                              00000006
+CMIF                              00000006
+CREN                              00000004
+CSRC                              00000007
+CVR0                              00000000
+CVR1                              00000001
+CVR2                              00000002
+CVR3                              00000003
+CVRCON                            0000009D
+CVREN                             00000007
+CVROE                             00000006
+CVRR                              00000005
+D                                 00000005
+DATA_ADDRESS                      00000005
+DC                                00000001
+D_A                               00000005
+D_NOT_A                           00000005
+EEADR                             0000010D
+EEADRH                            0000010F
+EECON1                            0000018C
+EECON2                            0000018D
+EEDATA                            0000010C
+EEDATH                            0000010E
+EEIE                              00000004
+EEIF                              00000004
+EEPGD                             00000007
+F                                 00000001
+FERR                              00000002
+FSR                               00000004
+GCEN                              00000007
+GIE                               00000007
+GO                                00000002
+GO_DONE                           00000002
+GO_NOT_DONE                       00000002
+I2C_DATA                          00000005
+I2C_READ                          00000002
+I2C_START                         00000003
+I2C_STOP                          00000004
+IBF                               00000007
+IBOV                              00000005
+INDF                              00000000
+INTCON                            0000000B
+INTE                              00000004
+INTEDG                            00000006
+INTF                              00000001
+IRP                               00000007
+NOT_A                             00000005
+NOT_ADDRESS                       00000005
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE 11
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+NOT_BO                            00000000
+NOT_BOR                           00000000
+NOT_DONE                          00000002
+NOT_PD                            00000003
+NOT_POR                           00000001
+NOT_RBPU                          00000007
+NOT_RC8                           00000006
+NOT_T1SYNC                        00000002
+NOT_TO                            00000004
+NOT_TX8                           00000006
+NOT_W                             00000002
+NOT_WRITE                         00000002
+OBF                               00000006
+OERR                              00000001
+OPTION_REG                        00000081
+P                                 00000004
+PCFG0                             00000000
+PCFG1                             00000001
+PCFG2                             00000002
+PCFG3                             00000003
+PCL                               00000002
+PCLATH                            0000000A
+PCON                              0000008E
+PEIE                              00000006
+PEN                               00000002
+PIE1                              0000008C
+PIE2                              0000008D
+PIR1                              0000000C
+PIR2                              0000000D
+PORTA                             00000005
+PORTB                             00000006
+PORTC                             00000007
+PORTD                             00000008
+PORTE                             00000009
+PR2                               00000092
+PS0                               00000000
+PS1                               00000001
+PS2                               00000002
+PSA                               00000003
+PSPIE                             00000007
+PSPIF                             00000007
+PSPMODE                           00000004
+R                                 00000002
+RA0                               00000000
+RA1                               00000001
+RA2                               00000002
+RA3                               00000003
+RA4                               00000004
+RA5                               00000005
+RB0                               00000000
+RB1                               00000001
+RB2                               00000002
+RB3                               00000003
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE 12
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+RB4                               00000004
+RB5                               00000005
+RB6                               00000006
+RB7                               00000007
+RBIE                              00000003
+RBIF                              00000000
+RC0                               00000000
+RC1                               00000001
+RC2                               00000002
+RC3                               00000003
+RC4                               00000004
+RC5                               00000005
+RC6                               00000006
+RC7                               00000007
+RC8_9                             00000006
+RC9                               00000006
+RCD8                              00000000
+RCEN                              00000003
+RCIE                              00000005
+RCIF                              00000005
+RCREG                             0000001A
+RCSTA                             00000018
+RD                                00000000
+RD0                               00000000
+RD1                               00000001
+RD2                               00000002
+RD3                               00000003
+RD4                               00000004
+RD5                               00000005
+RD6                               00000006
+RD7                               00000007
+RE0                               00000000
+RE1                               00000001
+RE2                               00000002
+READ_WRITE                        00000002
+RP0                               00000005
+RP1                               00000006
+RSEN                              00000001
+RX9                               00000006
+RX9D                              00000000
+R_NOT_W                           00000002
+R_W                               00000002
+S                                 00000003
+SEN                               00000000
+SMP                               00000007
+SPBRG                             00000099
+SPEN                              00000007
+SREN                              00000005
+SSPADD                            00000093
+SSPBUF                            00000013
+SSPCON                            00000014
+SSPCON2                           00000091
+SSPEN                             00000005
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE 13
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+SSPIE                             00000003
+SSPIF                             00000003
+SSPM0                             00000000
+SSPM1                             00000001
+SSPM2                             00000002
+SSPM3                             00000003
+SSPOV                             00000006
+SSPSTAT                           00000094
+STATUS                            00000003
+SYNC                              00000004
+T0CS                              00000005
+T0IE                              00000005
+T0IF                              00000002
+T0SE                              00000004
+T1CKPS0                           00000004
+T1CKPS1                           00000005
+T1CON                             00000010
+T1INSYNC                          00000002
+T1OSCEN                           00000003
+T1SYNC                            00000002
+T2CKPS0                           00000000
+T2CKPS1                           00000001
+T2CON                             00000012
+TMR0                              00000001
+TMR0IE                            00000005
+TMR0IF                            00000002
+TMR1                              0000000E
+TMR1CS                            00000001
+TMR1H                             0000000F
+TMR1IE                            00000000
+TMR1IF                            00000000
+TMR1L                             0000000E
+TMR1ON                            00000000
+TMR2                              00000011
+TMR2IE                            00000001
+TMR2IF                            00000001
+TMR2ON                            00000002
+TOUTPS0                           00000003
+TOUTPS1                           00000004
+TOUTPS2                           00000005
+TOUTPS3                           00000006
+TRISA                             00000085
+TRISA0                            00000000
+TRISA1                            00000001
+TRISA2                            00000002
+TRISA3                            00000003
+TRISA4                            00000004
+TRISA5                            00000005
+TRISB                             00000086
+TRISB0                            00000000
+TRISB1                            00000001
+TRISB2                            00000002
+TRISB3                            00000003
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE 14
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+TRISB4                            00000004
+TRISB5                            00000005
+TRISB6                            00000006
+TRISB7                            00000007
+TRISC                             00000087
+TRISC0                            00000000
+TRISC1                            00000001
+TRISC2                            00000002
+TRISC3                            00000003
+TRISC4                            00000004
+TRISC5                            00000005
+TRISC6                            00000006
+TRISC7                            00000007
+TRISD                             00000088
+TRISD0                            00000000
+TRISD1                            00000001
+TRISD2                            00000002
+TRISD3                            00000003
+TRISD4                            00000004
+TRISD5                            00000005
+TRISD6                            00000006
+TRISD7                            00000007
+TRISE                             00000089
+TRISE0                            00000000
+TRISE1                            00000001
+TRISE2                            00000002
+TRMT                              00000001
+TX8_9                             00000006
+TX9                               00000006
+TX9D                              00000000
+TXD8                              00000000
+TXEN                              00000005
+TXIE                              00000004
+TXIF                              00000004
+TXREG                             00000019
+TXSTA                             00000098
+UA                                00000001
+W                                 00000000
+WCOL                              00000007
+WR                                00000001
+WREN                              00000002
+WRERR                             00000003
+Z                                 00000002
+_BODEN_OFF                        00003FBF
+_BODEN_ON                         00003FFF
+_BOREN_OFF                        00003FBF
+_BOREN_ON                         00003FFF
+_CONFIG                           00002007
+_CPD_OFF                          00003FFF
+_CPD_ON                           00003EFF
+_CP_ALL                           00001FFF
+_CP_OFF                           00003FFF
+_CP_ON                            00001FFF
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE 15
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+_DEBUG_OFF                        00003FFF
+_DEBUG_ON                         000037FF
+_DEVID1                           00002006
+_FOSC_EXTRC                       00003FFF
+_FOSC_HS                          00003FFE
+_FOSC_LP                          00003FFC
+_FOSC_XT                          00003FFD
+_HS_OSC                           00003FFE
+_IDLOC0                           00002000
+_IDLOC1                           00002001
+_IDLOC2                           00002002
+_IDLOC3                           00002003
+_LP_OSC                           00003FFC
+_LVP_OFF                          00003F7F
+_LVP_ON                           00003FFF
+_PWRTE_OFF                        00003FFF
+_PWRTE_ON                         00003FF7
+_RC_OSC                           00003FFF
+_WDTE_OFF                         00003FFB
+_WDTE_ON                          00003FFF
+_WDT_OFF                          00003FFB
+_WDT_ON                           00003FFF
+_WRT_1FOURTH                      00003BFF
+_WRT_256                          00003DFF
+_WRT_HALF                         000039FF
+_WRT_OFF                          00003FFF
+_XT_OSC                           00003FFD
+__16F877A                         00000001
+adcloop                           0000003A
+comparison                        00000089
+comparison1                       00000091
+comparison2                       00000099
+comparison3                       000000A1
+comparison4                       000000A9
+comparison5                       000000B1
+const1                            00000026
+const2                            00000027
+count1                            00000020
+count2                            00000021
+delayms                           000000B9
+delayus                           000000B6
+digit1                            00000023
+digit2                            00000024
+dutycycle0                        000000DB
+dutycycle100                      000000D5
+dutycycle25                       000000C3
+dutycycle50                       000000C9
+dutycycle75                       000000CF
+enable                            000000BE
+getones                           0000004F
+gettens                           00000045
+init                              0000005D
+lcdData                           PORTB
+MPASM 5.82  G07_AUTOMATED_COOLING_SYSTEM.ASM   9-22-2021  20:19:30         PAGE 16
+
+
+SYMBOL TABLE
+  LABEL                             VALUE 
+
+lcdE                              PORTD,1
+lcdRs                             PORTD,0
+lcdRw                             PORTD,2
+line1                             00000074
+line1pt1                          0000007B
+line2                             00000082
+main                              00000038
+print                             00000071
+ref1                              00000028
+ref2                              00000029
+ref3                              00000030
+ref4                              00000031
+temp                              00000025
+units                             0000006C
+
+Errors   :     0
+Warnings :    67 reported,     0 suppressed
+Messages :     8 reported,     0 suppressed
+
+
